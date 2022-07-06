@@ -160,6 +160,10 @@ CbcNodeInfo::CbcNodeInfo(CbcNodeInfo *parent, CbcNode *owner)
   printf("CbcNodeInfo %p Constructor from parent %p\n", this, parent_);
 #endif
   //setParentBasedData();
+  if (parent_){
+    parent_->addChild(this);
+  }
+  std::cout << "children: " << children().size() << '\n';
 }
 
 /**

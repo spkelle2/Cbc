@@ -316,6 +316,16 @@ public:
   }
   /// If we need to take off parent based data
   void unsetParentBasedData();
+  /// Get the vector of pointers to children CbcNodeInfo's
+  inline std::vector<CbcNodeInfo*> children() const
+  {
+    return children_;
+  }
+  /// Add a child CbcNodeInfo to children vector
+  inline void addChild(CbcNodeInfo* nodeInfoPointer)
+  {
+    children_.push_back(nodeInfoPointer);
+  }
 
 protected:
   /** Number of other nodes pointing to this node.
@@ -362,6 +372,8 @@ protected:
         4 - basis!
     */
   int active_;
+  /// Vector of pointers to children's CbcNodeInfo instances
+  std::vector<CbcNodeInfo*> children_;
 
 private:
   /// Illegal Assignment operator

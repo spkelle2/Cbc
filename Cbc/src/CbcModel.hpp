@@ -2615,20 +2615,8 @@ public:
   {
     return symmetryInfo_;
   }
-  /// Set symmetry information
-  inline void setSymmetryInfo(CbcSymmetry * info)
-  {
-    symmetryInfo_ = info;
-  }
   /// get rid of all
   void zapSymmetry();
-  /// Root symmetry information
-  inline CbcSymmetry *rootSymmetryInfo() const
-  {
-    return rootSymmetryInfo_;
-  }
-  /// get rid of all
-  void zapRootSymmetry();
 #endif
   /// Set depth for fast nodes
   inline void setFastNodeDepth(int value)
@@ -2740,6 +2728,27 @@ public:
   const std::vector< std::pair< std::string, double > > &getMIPStart()
   {
     return this->mipStart_;
+  }
+
+  /// Get the value of mappingNodes
+  inline bool mappingNodes() const
+  {
+    return mappingNodes_;
+  }
+  /// Set the value of mappingNodes
+  inline void mappingNodes(bool value)
+  {
+    mappingNodes_ = value;
+  }
+  /// Get the copy of nodes
+  inline std::map<int, CbcNode*> nodeMap() const
+  {
+    return nodeMap_;
+  }
+  /// Add a (nodeNumber, CbcNode) pair to nodeMap
+  inline void nodeMap(int nodeNumber, CbcNode* nodePointer)
+  {
+    nodeMap_[nodeNumber] = nodePointer;
   }
 
   //---------------------------------------------------------------------------
@@ -3115,12 +3124,8 @@ private:
 #else
   CbcEventHandler *eventHandler_;
 #endif
-#ifdef COIN_HAS_NTY
   /// Symmetry information
   CbcSymmetry *symmetryInfo_;
-  /// Root symmetry information
-  CbcSymmetry *rootSymmetryInfo_;
-#endif
   /// Total number of objects
   int numberObjects_;
 
@@ -3270,6 +3275,10 @@ private:
   CbcBaseModel *master_;
   /// Pointer to masterthread
   CbcThread *masterThread_;
+  /// whether or not to save a copy of each node in nodeMap - disables deleting nodes after fathoming
+  bool mappingNodes_;
+  /// copy of nodes (for deriving cutting planes in instances with same coef matrix)
+  std::map<int, CbcNode*> nodeMap_;
   //@}
 };
 /// So we can use osiObject or CbcObject during transition

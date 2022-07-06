@@ -313,6 +313,14 @@ void CbcNode::createInfo(CbcModel *model,
   // Set node number
   nodeInfo_->setNodeNumber(model->getNodeCount2());
   state_ |= 2; // say active
+
+  // add to nodeMap if tracking
+  if (model->mappingNodes()) {
+    int nodeNumber = nodeInfo_->nodeNumber();
+    assert(not model->nodeMap().count(nodeNumber));  // nodeNumber should be unique
+    model->nodeMap(nodeNumber, this);
+  }
+  std::cout << "nodeMap elements: " << model->nodeMap().size() << '\n';
 }
 
 #else // CBC_NEW_CREATEINFO

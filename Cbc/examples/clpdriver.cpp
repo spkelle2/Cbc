@@ -113,9 +113,9 @@ ClpEventHandler *MyEventHandler3::clone() const
 
 int MyEventHandler3::event(Event whichEvent)
 {
-  // See if just after postsolve
-  if (whichEvent == presolveAfterFirstSolve || whichEvent == presolveAfterSolve) {
-    return -2; // skip clean up
+  // After each dual iteration
+  if (whichEvent == endOfIteration && model_->algorithm() < 0) {
+    return -1; // carry on - drop break point here to access dual information
   } else {
     return -1; // carry on
   }
