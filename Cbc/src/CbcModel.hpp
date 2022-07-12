@@ -2730,25 +2730,25 @@ public:
     return this->mipStart_;
   }
 
-  /// Get the value of mappingNodes
-  inline bool mappingNodes() const
+  /// Get the value of persistNodes
+  inline bool persistNodes() const
   {
-    return mappingNodes_;
+    return persistNodes_;
   }
-  /// Set the value of mappingNodes
-  inline void mappingNodes(bool value)
+  /// Set the value of persistNodes
+  inline void persistNodes(bool value)
   {
-    mappingNodes_ = value;
+    persistNodes_ = value;
   }
   /// Get the copy of nodes
-  inline std::map<int, CbcNode*> nodeMap() const
+  inline std::vector<CbcNode*> nodeList() const
   {
-    return nodeMap_;
+    return nodeList_;
   }
-  /// Add a (nodeNumber, CbcNode) pair to nodeMap
-  inline void nodeMap(int nodeNumber, CbcNode* nodePointer)
+  /// Add a CbcNode to nodeList
+  inline void addNode(CbcNode* nodePointer)
   {
-    nodeMap_[nodeNumber] = nodePointer;
+    nodeList_.push_back(nodePointer);
   }
 
   //---------------------------------------------------------------------------
@@ -3275,10 +3275,10 @@ private:
   CbcBaseModel *master_;
   /// Pointer to masterthread
   CbcThread *masterThread_;
-  /// whether or not to save a copy of each node in nodeMap - disables deleting nodes after fathoming
-  bool mappingNodes_;
+  /// whether or not to save a copy of each node in nodeList - disables deleting nodes after fathoming
+  bool persistNodes_;
   /// copy of nodes (for deriving cutting planes in instances with same coef matrix)
-  std::map<int, CbcNode*> nodeMap_;
+  std::vector<CbcNode*> nodeList_;
   //@}
 };
 /// So we can use osiObject or CbcObject during transition

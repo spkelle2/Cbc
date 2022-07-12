@@ -163,7 +163,6 @@ CbcNodeInfo::CbcNodeInfo(CbcNodeInfo *parent, CbcNode *owner)
   if (parent_){
     parent_->addChild(this);
   }
-  std::cout << "children: " << children().size() << '\n';
 }
 
 /**

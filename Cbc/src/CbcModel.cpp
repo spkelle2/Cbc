@@ -5654,8 +5654,7 @@ CbcModel::CbcModel()
   , numberGlobalCutsIn_(0)
   , master_(NULL)
   , masterThread_(NULL)
-  , mappingNodes_(false)
-//  , nodeMap_(NULL)
+  , persistNodes_(false)
 {
   memset(intParam_, 0, sizeof(intParam_));
   intParam_[CbcMaxNumNode] = COIN_INT_MAX;
@@ -5828,8 +5827,7 @@ CbcModel::CbcModel(const OsiSolverInterface &rhs)
   , numberGlobalCutsIn_(0)
   , master_(NULL)
   , masterThread_(NULL)
-  , mappingNodes_(false)
-//  , nodeMap_(NULL)
+  , persistNodes_(false)
 {
   memset(intParam_, 0, sizeof(intParam_));
   intParam_[CbcMaxNumNode] = COIN_INT_MAX;
@@ -6117,8 +6115,7 @@ CbcModel::CbcModel(const CbcModel &rhs, bool cloneHandler)
   , numberGlobalCutsIn_(rhs.numberGlobalCutsIn_)
   , master_(NULL)
   , masterThread_(NULL)
-  , mappingNodes_(rhs.mappingNodes_)
-//  , nodeMap_(rhs.nodeMap_)
+  , persistNodes_(rhs.persistNodes_)
 {
   memcpy(intParam_, rhs.intParam_, sizeof(intParam_));
   memcpy(dblParam_, rhs.dblParam_, sizeof(dblParam_));
@@ -19573,7 +19570,7 @@ CbcModel::postProcessedSolver(int solutionType)
 void
 CbcModel::deleteNode(CbcNode * node)
 {
-  if (not mappingNodes_) {
+  if (not persistNodes_) {
     delete node;
     if (node == currentNode_)
       currentNode_ = NULL;
