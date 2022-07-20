@@ -17,7 +17,6 @@
 
 static int callBack(CbcModel *model, int whereFrom)
 {
-  // model->solver()->getModelPtr();
   return 0;
 }
 

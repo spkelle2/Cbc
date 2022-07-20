@@ -1,7 +1,6 @@
 // inc.cpp: example of event handler to save
 // every incumbent solution to a new file
 
-#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <OsiCbcSolverInterface.hpp>
@@ -67,13 +66,40 @@ CbcEventHandler *SolHandler::clone() const
 
 CbcEventHandler::CbcAction SolHandler::event(CbcEvent whichEvent)
 {
-  // examine root node (excluding subtrees - avoids primal heuristics)
-  if (this->model_->getNodeCount() == 1 && (model_->specialOptions() & 2048) == 0) {
-    if (whichEvent == node) {
-      std::cout << "there are " << this->model_->globalCuts()->sizeRowCuts() <<
-        " cuts added after solving the root nodes\n";
-    }
-  }
+  // If in sub tree carry on
+  if ((model_->specialOptions() & 2048) == 0) {
+    if ((whichEvent == solution || whichEvent == heuristicSolution)) {
+      OsiSolverInterface *origSolver = model_->solver();
+      const OsiSolverInterface *pps = model_->postProcessedSolver(1);
+
+      const OsiSolverInterface *solver = pps ? pps : origSolver;
+
+      if (bestCost > solver->getObjValue() + 1e-6) {
+        bestCost = solver->getObjValue();
+        char outFName[256] = "", strCost[256] = "";
+        sprintf(strCost, "%.12e", bestCost);
+        char *s = strstr(strCost, ".");
+        if (s)
+          *s = 'p';
+        sprintf(outFName, "inc%s.sol", strCost);
+        printf("** solution improved to %g, saving it to file %s ** \n", solver->getObjValue(), outFName);
+
+        // saving .sol
+        FILE *f = fopen(outFName, "w");
+        assert(f);
+        fprintf(f, "Stopped on iterations - objective value %.8f\n", solver->getObjValue());
+        const double *x = solver->getColSolution();
+        const double *obj = solver->getObjCoefficients();
+        for (int i = 0; (i < solver->getNumCols()); ++i) {
+          if (fabs(x[i]) < 1e-6)
+            continue;
+          fprintf(f, "%-7d %22s %22g %g\n", i,
+            solver->getColName(i).c_str(), x[i], obj[i]);
+        }
+        fclose(f);
+      } // improved cost
+    } // solution found
+  } // not in subtree
 
   return noAction;
 }
@@ -92,8 +118,6 @@ int main(int argc, char **argv)
   lp.readMps(argv[1]);
 
   CbcModel model(lp);
-//  model.setMaximumNodes(1);
-  model.mappingNodes(true);
 
   SolHandler sh;
   model.passInEventHandler(&sh);
