@@ -192,7 +192,7 @@ int MyEventHandler3::event(Event whichEvent)
   // After each dual iteration
   if (whichEvent == endOfIteration && model_->algorithm() < 0){
     // if working on the full problem, get the dual solutions
-    if (this->model_->numberColumns() == cols_ && this->model_->numberRows() >= rows_) {
+    if (this->model_->numberColumns() == cols_ && this->model_->numberRows() == rows_) {
       std::cout << "Iteration " << this->model_->numberIterations() << " dual solutions \n";
       // column dual variables
       std::cout << "s = [ ";
