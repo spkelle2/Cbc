@@ -11,6 +11,7 @@
 #include "CbcConfig.h"
 
 #include <string>
+#include <memory>
 //#define CBC_DEBUG 1
 //#define CHECK_CUT_COUNTS
 //#define CHECK_NODE
@@ -5698,6 +5699,7 @@ CbcModel::CbcModel()
   handler_->setLogLevel(2);
   messages_ = CbcMessage();
   //eventHandler_ = new CbcEventHandler() ;
+  nodeList_ = std::make_shared<std::vector<CbcNode*> >();
 }
 
 /** Constructor from solver.
@@ -5911,6 +5913,7 @@ CbcModel::CbcModel(const OsiSolverInterface &rhs)
   } else {
     integerVariable_ = NULL;
   }
+  nodeList_ = std::make_shared<std::vector<CbcNode*> >();
 }
 
 static int *resizeInt(int *array, int oldLength, int newLength)
@@ -6116,6 +6119,7 @@ CbcModel::CbcModel(const CbcModel &rhs, bool cloneHandler)
   , master_(NULL)
   , masterThread_(NULL)
   , persistNodes_(rhs.persistNodes_)
+  , nodeList_(rhs.nodeList_)
 {
   memcpy(intParam_, rhs.intParam_, sizeof(intParam_));
   memcpy(dblParam_, rhs.dblParam_, sizeof(dblParam_));

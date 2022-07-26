@@ -7,6 +7,7 @@
 #define CbcModel_H
 #include <string>
 #include <vector>
+#include <memory>
 #include "CoinMessageHandler.hpp"
 #include "OsiSolverInterface.hpp"
 #include "OsiBranchingObject.hpp"
@@ -2743,12 +2744,12 @@ public:
   /// Get the copy of nodes
   inline std::vector<CbcNode*> nodeList() const
   {
-    return nodeList_;
+    return *nodeList_;
   }
   /// Add a CbcNode to nodeList
   inline void addNode(CbcNode* nodePointer)
   {
-    nodeList_.push_back(nodePointer);
+    nodeList_->push_back(nodePointer);
   }
 
   //---------------------------------------------------------------------------
@@ -3278,7 +3279,7 @@ private:
   /// whether or not to save a copy of each node in nodeList - disables deleting nodes after fathoming
   bool persistNodes_;
   /// copy of nodes (for deriving cutting planes in instances with same coef matrix)
-  std::vector<CbcNode*> nodeList_;
+  std::shared_ptr<std::vector<CbcNode*> > nodeList_;
   //@}
 };
 /// So we can use osiObject or CbcObject during transition

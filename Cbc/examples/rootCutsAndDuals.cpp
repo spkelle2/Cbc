@@ -29,25 +29,20 @@ public:
   SolHandler(const SolHandler &rhs);
   SolHandler &operator=(const SolHandler &rhs);
   virtual CbcEventHandler *clone() const;
-
-  double bestCost;
 };
 
 SolHandler::SolHandler()
   : CbcEventHandler()
-  , bestCost(COIN_DBL_MAX)
 {
 }
 
 SolHandler::SolHandler(const SolHandler &rhs)
   : CbcEventHandler(rhs)
-  , bestCost(rhs.bestCost)
 {
 }
 
 SolHandler::SolHandler(CbcModel *model)
   : CbcEventHandler(model)
-  , bestCost(COIN_DBL_MAX)
 {
 }
 
@@ -59,7 +54,6 @@ SolHandler &SolHandler::operator=(const SolHandler &rhs)
 {
   if (this != &rhs) {
     CbcEventHandler::operator=(rhs);
-    this->bestCost = rhs.bestCost;
   }
   return *this;
 }

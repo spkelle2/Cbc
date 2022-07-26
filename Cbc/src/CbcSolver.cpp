@@ -8015,6 +8015,9 @@ int CbcMain1(int argc, const char *argv[],
                 int returnCode = 0;
                 if (callBack != NULL)
                   returnCode = callBack(babModel_, 5);
+                if (model.persistNodes()){
+                  std::cout << "nodeList has " << model.nodeList().size() << " elements \n";
+                }
                 if (returnCode) {
                   // exit if user wants
                   model_.moveInfo(*babModel_);
