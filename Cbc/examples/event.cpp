@@ -14,6 +14,9 @@
 
 static int callBack(CbcModel *model, int whereFrom)
 {
+  if (whereFrom == 5){
+    // std::cout << "osiList has " << model->getOsiList().size() << " elements\n";
+  }
   return 0;
 }
 
@@ -26,25 +29,20 @@ public:
   SolHandler(const SolHandler &rhs);
   SolHandler &operator=(const SolHandler &rhs);
   virtual CbcEventHandler *clone() const;
-
-  double bestCost;
 };
 
 SolHandler::SolHandler()
   : CbcEventHandler()
-  , bestCost(COIN_DBL_MAX)
 {
 }
 
 SolHandler::SolHandler(const SolHandler &rhs)
   : CbcEventHandler(rhs)
-  , bestCost(rhs.bestCost)
 {
 }
 
 SolHandler::SolHandler(CbcModel *model)
   : CbcEventHandler(model)
-  , bestCost(COIN_DBL_MAX)
 {
 }
 
@@ -56,7 +54,6 @@ SolHandler &SolHandler::operator=(const SolHandler &rhs)
 {
   if (this != &rhs) {
     CbcEventHandler::operator=(rhs);
-    this->bestCost = rhs.bestCost;
   }
   return *this;
 }
@@ -68,10 +65,9 @@ CbcEventHandler *SolHandler::clone() const
 
 CbcEventHandler::CbcAction SolHandler::event(CbcEvent whichEvent)
 {
-  // examine root node (excluding subtrees - avoids primal heuristics)
-  if (this->model_->getNodeCount() == 1 && (model_->specialOptions() & 2048) == 0
-        && whichEvent == node) {
-      std::cout << "examining root node\n";
+  // examine each node when fathoming
+  if ((model_->specialOptions() & 2048) == 0 && whichEvent == node) {
+    std::cout << "examining a node\n";
   }
   return noAction;
 }
