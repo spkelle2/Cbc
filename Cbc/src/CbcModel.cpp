@@ -5700,7 +5700,7 @@ CbcModel::CbcModel()
   messages_ = CbcMessage();
   //eventHandler_ = new CbcEventHandler() ;
   nodeList_ = std::make_shared<std::vector<CbcNode*> >();
-  nodeMap_ = std::make_shared<std::vector<std::pair<CbcNode*, ClpSimplex*> > >();
+  nodeMap_ = std::make_shared<std::vector<std::pair<CbcNode*, OsiClpSolverInterface*> > >();
 }
 
 /** Constructor from solver.
@@ -5915,7 +5915,7 @@ CbcModel::CbcModel(const OsiSolverInterface &rhs)
     integerVariable_ = NULL;
   }
   nodeList_ = std::make_shared<std::vector<CbcNode*> >();
-  nodeMap_ = std::make_shared<std::vector<std::pair<CbcNode*, ClpSimplex*> > >();
+  nodeMap_ = std::make_shared<std::vector<std::pair<CbcNode*, OsiClpSolverInterface*> > >();
 }
 
 static int *resizeInt(int *array, int oldLength, int newLength)
@@ -17013,12 +17013,12 @@ int CbcModel::doOneNode(CbcModel *baseModel, CbcNode *&node, CbcNode *&newNode)
     }
     if ((currentNode_ != NULL) && persistNodes_){
       // todo: check the models for null nodes (are they infeasible models?)
-      OsiClpSolverInterface* osi = dynamic_cast<OsiClpSolverInterface*>(solver_);
-      // easiest way I see to get deep copy and avoid losing references to custom destructors
-      osi->getModelPtr()->writeMps("current_node.mps", 0, 2, 0.0);
-      ClpSimplex lp = ClpSimplex();
-      lp.readMps("current_node.mps", true, false);
-      nodeMap_->push_back(std::pair<CbcNode*, ClpSimplex*>(currentNode_, &lp));
+      OsiClpSolverInterface* lp = dynamic_cast<OsiClpSolverInterface*>(solver_);
+      // easiest way I see to get deep copy and avoid losing references in custom destructors
+      lp->getModelPtr()->writeMps("current_node.mps", 0, 2, 0.0);
+      OsiClpSolverInterface deepLp;
+      deepLp.readMps("current_node.mps", true, false);
+      nodeMap_->push_back(std::pair<CbcNode*, OsiClpSolverInterface*>(currentNode_, &deepLp));
       std::string file_to_remove = "current_node.mps";
       std::remove(file_to_remove.c_str());
       //model_->solver()->getModelPtr();
