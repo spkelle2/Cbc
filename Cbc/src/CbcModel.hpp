@@ -2756,6 +2756,8 @@ public:
   {
     return *nodeMap_;
   }
+  /// Get LP's of each node returned as OsiSolverInterface
+  std::vector<OsiSolverInterface*> getOsiSolverInterfaceList();
 
   //---------------------------------------------------------------------------
 

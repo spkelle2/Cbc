@@ -19596,3 +19596,11 @@ CbcModel::deleteNode(CbcNode * node)
   }
 }
 
+std::vector<OsiSolverInterface*> CbcModel::getOsiSolverInterfaceList() {
+  std::vector<OsiSolverInterface*> recastOsiSolverInterfaceList;
+  for (unsigned int i = 0; i < this->getNodeMap().size(); i++) {
+    OsiSolverInterface* lp = dynamic_cast<OsiSolverInterface*>(this->getNodeMap()[i].second);
+    recastOsiSolverInterfaceList.push_back(lp);
+  }
+  return recastOsiSolverInterfaceList;
+}
