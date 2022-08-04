@@ -17014,14 +17014,8 @@ int CbcModel::doOneNode(CbcModel *baseModel, CbcNode *&node, CbcNode *&newNode)
     if ((currentNode_ != NULL) && persistNodes_){
       // todo: check the models for null nodes (are they infeasible models?)
       OsiClpSolverInterface* osi = dynamic_cast<OsiClpSolverInterface*>(solver_);
-      // easiest way I see to get deep copy and avoid losing references to custom destructors
-      osi->getModelPtr()->writeMps("current_node.mps", 0, 2, 0.0);
-      std::shared_ptr<ClpSimplex> lp = std::make_shared<ClpSimplex>();
-      lp->readMps("current_node.mps", true, false);
+      std::shared_ptr<ClpSimplex> lp = std::make_shared<ClpSimplex>(*osi->getModelPtr());
       nodeMap_->push_back(std::pair<CbcNode*, std::shared_ptr<ClpSimplex> >(currentNode_, lp));
-      std::string file_to_remove = "current_node.mps";
-      std::remove(file_to_remove.c_str());
-      //model_->solver()->getModelPtr();
     }
     if (parallelMode() >= 0)
       assert(!newNode || newNode->objectiveValue() <= getCutoff());
