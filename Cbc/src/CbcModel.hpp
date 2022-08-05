@@ -18,6 +18,7 @@
 #include "CbcMessage.hpp"
 #include "CbcEventHandler.hpp"
 #include "ClpDualRowPivot.hpp"
+#include "ClpSimplex.hpp"
 
 class CbcCutGenerator;
 class CbcBaseModel;
@@ -3311,6 +3312,13 @@ int callCbc1(const char *input2, CbcModel &babSolver, int(CbcModel *currentSolve
 int CbcMain1(int argc, const char *argv[], CbcModel &babSolver, int(CbcModel *currentSolver, int whereFrom));
 // For uniform setting of cut and heuristic options
 void setCutAndHeuristicOptions(CbcModel &model);
+
+class ICbcModel : public CbcModel{
+  public:
+    ICbcModel(const OsiSolverInterface &);
+    std::vector<IClpSimplex*> getClpSimplexList();
+};
+
 #endif
 
 /* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2
