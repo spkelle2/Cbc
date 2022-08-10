@@ -19590,15 +19590,3 @@ CbcModel::deleteNode(CbcNode * node)
   }
 }
 
-ICbcModel::ICbcModel(const OsiSolverInterface &rhs):CbcModel(rhs){
-
-}
-
-std::vector<IClpSimplex*> ICbcModel::getClpSimplexList() {
-  std::vector<IClpSimplex*> recastSimplexList;
-  for (unsigned int i = 0; i < this->getNodeMap().size(); i++) {
-    IClpSimplex* lp = static_cast<IClpSimplex*>(this->getNodeMap()[i].second.get());
-    recastSimplexList.push_back(lp);
-  }
-  return recastSimplexList;
-}
