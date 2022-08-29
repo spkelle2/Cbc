@@ -2753,7 +2753,7 @@ public:
     nodeList_->push_back(nodePointer);
   }
   /// Get copy of the nodeMap
-  inline std::vector<std::pair<CbcNode*, std::shared_ptr<ClpSimplex> > > getNodeMap() const
+  inline std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > getNodeMap() const
   {
     return *nodeMap_;
   }
@@ -3286,7 +3286,7 @@ private:
   bool persistNodes_;
   /// copy of nodes (for deriving cutting planes in instances with same coef matrix)
   std::shared_ptr<std::vector<CbcNode*> > nodeList_;  // shared pointer so it can be copied
-  std::shared_ptr<std::vector<std::pair<CbcNode*, std::shared_ptr<ClpSimplex> > > > nodeMap_;
+  std::shared_ptr<std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > > nodeMap_;
   //@}
 };
 /// So we can use osiObject or CbcObject during transition

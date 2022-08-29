@@ -87,7 +87,7 @@ int main(int argc, char **argv)
   lp.readMps(argv[1]);
 
   // set up branch and cut solver
-  ICbcModel model(lp);
+  CbcModel model(lp);
   model.persistNodes(true);
   SolHandler sh;
   model.passInEventHandler(&sh);
@@ -96,7 +96,6 @@ int main(int argc, char **argv)
   CbcMain1(argc - 1, (const char **)(argv + 1), model, callBack, cbcData);
 
   model.getNodeMap();
-  model.getClpSimplexList();
 
   return 0;
 }
