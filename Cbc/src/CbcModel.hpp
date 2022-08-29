@@ -18,6 +18,7 @@
 #include "CbcMessage.hpp"
 #include "CbcEventHandler.hpp"
 #include "ClpDualRowPivot.hpp"
+#include "ClpSimplex.hpp"
 
 class CbcCutGenerator;
 class CbcBaseModel;
@@ -2752,7 +2753,7 @@ public:
     nodeList_->push_back(nodePointer);
   }
   /// Get copy of the nodeMap
-  inline std::vector<std::pair<CbcNode*, ClpSimplex*> > getNodeMap() const
+  inline std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > getNodeMap() const
   {
     return *nodeMap_;
   }
@@ -3285,7 +3286,7 @@ private:
   bool persistNodes_;
   /// copy of nodes (for deriving cutting planes in instances with same coef matrix)
   std::shared_ptr<std::vector<CbcNode*> > nodeList_;  // shared pointer so it can be copied
-  std::shared_ptr<std::vector<std::pair<CbcNode*, ClpSimplex*> > > nodeMap_;
+  std::shared_ptr<std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > > nodeMap_;
   //@}
 };
 /// So we can use osiObject or CbcObject during transition
@@ -3311,6 +3312,8 @@ int callCbc1(const char *input2, CbcModel &babSolver, int(CbcModel *currentSolve
 int CbcMain1(int argc, const char *argv[], CbcModel &babSolver, int(CbcModel *currentSolver, int whereFrom));
 // For uniform setting of cut and heuristic options
 void setCutAndHeuristicOptions(CbcModel &model);
+
+
 #endif
 
 /* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2
