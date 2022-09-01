@@ -95,7 +95,8 @@ int main(int argc, char **argv)
   CbcMain0(model, cbcData);
   CbcMain1(argc - 1, (const char **)(argv + 1), model, callBack, cbcData);
 
-  model.getNodeMap();
+  model.getNodeMap()[0].first.get();
+  model.getNodeMap()[0].second.get();
 
   return 0;
 }

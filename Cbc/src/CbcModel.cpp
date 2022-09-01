@@ -17011,12 +17011,12 @@ int CbcModel::doOneNode(CbcModel *baseModel, CbcNode *&node, CbcNode *&newNode)
     if (eventHandler_ && !eventHandler_->event(CbcEventHandler::node)) {
       eventHappened_ = true; // exit
     }
-    if ((currentNode_ != NULL) && persistNodes_){
+    if (persistNodes_ && (specialOptions_ & 2048) == 0){
       // todo: check the models for null nodes (are they infeasible models?)
       OsiClpSolverInterface* osi = dynamic_cast<OsiClpSolverInterface*>(solver_);
       std::shared_ptr<ClpSimplex> lp = std::make_shared<ClpSimplex>(*osi->getModelPtr());
-      std::shared_ptr<CbcNode> node = std::make_shared<CbcNode>(*currentNode_);
-      nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(node, lp));
+      std::shared_ptr<CbcNode> n = std::make_shared<CbcNode>(*node);
+      nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(n, lp));
     }
     if (parallelMode() >= 0)
       assert(!newNode || newNode->objectiveValue() <= getCutoff());
