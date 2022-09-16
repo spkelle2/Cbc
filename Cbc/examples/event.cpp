@@ -69,6 +69,9 @@ CbcEventHandler::CbcAction SolHandler::event(CbcEvent whichEvent)
   if ((model_->specialOptions() & 2048) == 0 && whichEvent == node) {
     std::cout << "examining a node\n";
   }
+  if ((model_->specialOptions() & 2048) == 0 && whichEvent == solution) {
+    std::cout << "solution was found during branch and bound\n";
+  }
   return noAction;
 }
 
@@ -95,8 +98,12 @@ int main(int argc, char **argv)
   CbcMain0(model, cbcData);
   CbcMain1(argc - 1, (const char **)(argv + 1), model, callBack, cbcData);
 
-  model.getNodeMap()[0].first.get();
-  model.getNodeMap()[0].second.get();
+  model.nodeMap()[0].first.get();
+  model.nodeMap()[0].second.get();
+
+  model.nodeMap()[0].first.get()->nodeMapIndex();
+  model.nodeMap()[0].first.get()->nodeMapLineage();
+  model.nodeMap()[0].first.get()->nodeMapLeafStatus();
 
   return 0;
 }

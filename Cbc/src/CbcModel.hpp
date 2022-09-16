@@ -2742,18 +2742,8 @@ public:
   {
     persistNodes_ = value;
   }
-  /// Get the copy of nodes
-  inline std::vector<CbcNode*> nodeList() const
-  {
-    return *nodeList_;
-  }
-  /// Add a CbcNode to nodeList
-  inline void addNode(CbcNode* nodePointer)
-  {
-    nodeList_->push_back(nodePointer);
-  }
-  /// Get copy of the nodeMap
-  inline std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > getNodeMap() const
+  /// Get the copy of nodes if they are persisted
+  inline std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > nodeMap() const
   {
     return *nodeMap_;
   }
@@ -3282,10 +3272,10 @@ private:
   CbcBaseModel *master_;
   /// Pointer to masterthread
   CbcThread *masterThread_;
-  /// whether or not to save a copy of each node in nodeList - disables deleting nodes after fathoming
+  /// whether or not to save a copy of each node in nodeMap - disables deleting nodes after fathoming
   bool persistNodes_;
   /// copy of nodes (for deriving cutting planes in instances with same coef matrix)
-  std::shared_ptr<std::vector<CbcNode*> > nodeList_;  // shared pointer so it can be copied
+  /// outer shared pointer is so it won't get deleted until garbage collection
   std::shared_ptr<std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > > nodeMap_;
   //@}
 };

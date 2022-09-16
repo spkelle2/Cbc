@@ -15,6 +15,7 @@
 #include "CbcNodeInfo.hpp"
 #include "CbcFullNodeInfo.hpp"
 #include "CbcPartialNodeInfo.hpp"
+#include "ClpSimplex.hpp"
 
 class OsiSolverInterface;
 class OsiSolverBranch;
@@ -348,6 +349,34 @@ public:
   {
     assert(nodeInfo_->numberBranchesLeft() == branch_->numberBranchesLeft());
   }
+  inline int nodeMapLeafStatus() const
+  {
+    return nodeMapLeafStatus_;
+  }
+  inline void nodeMapLeafStatus(int leafStatus)
+  {
+    nodeMapLeafStatus_ = leafStatus;
+  }
+  inline std::vector<int> nodeMapLineage() const
+  {
+    return nodeMapLineage_;
+  }
+  inline void nodeMapLineage(std::vector<int> lineage)
+  {
+    nodeMapLineage_ = lineage;
+  }
+  inline void nodeMapLineage(int nodeIndex)
+  {
+    nodeMapLineage_.push_back(nodeIndex);
+  }
+  inline int nodeMapIndex() const
+  {
+    return nodeMapIndex_;
+  }
+  inline void nodeMapIndex(int index)
+  {
+    nodeMapIndex_ = index;
+  }
 
 private:
   // Data
@@ -372,6 +401,14 @@ private:
         2 - active
     */
   int state_;
+  /// below here can be moved into its own object at some point need be
+  /// keeping here for development to make it easier to move to CyLP since CyCbcNode already exists
+  /// -1 uninitialized, 0 not a leaf, 1 is leaf, relative to the nodes stored in CbcModel.nodeMap
+  int nodeMapLeafStatus_;
+  /// Vector of indices of CbcModel.nodeMap representing the ancestors (including self) of this node
+  std::vector<int> nodeMapLineage_;
+  /// Index of this node in CbcModel.nodeMap, -1 means uninitialized
+  int nodeMapIndex_;
 };
 
 #endif

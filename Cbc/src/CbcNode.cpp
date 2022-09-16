@@ -68,6 +68,8 @@ CbcNode::CbcNode()
   , numberUnsatisfied_(0)
   , nodeNumber_(-1)
   , state_(0)
+  , nodeMapLeafStatus_(-1)
+  , nodeMapIndex_(-1)
 {
 #ifdef CHECK_NODE
   printf("CbcNode %p Constructor\n", this);
@@ -90,6 +92,8 @@ CbcNode::CbcNode(CbcModel *model,
   , numberUnsatisfied_(0)
   , nodeNumber_(-1)
   , state_(0)
+  , nodeMapLeafStatus_(-1)
+  , nodeMapIndex_(-1)
 {
 #ifdef CHECK_NODE
   printf("CbcNode %p Constructor from model\n", this);
@@ -313,11 +317,6 @@ void CbcNode::createInfo(CbcModel *model,
   // Set node number
   nodeInfo_->setNodeNumber(model->getNodeCount2());
   state_ |= 2; // say active
-
-  // add to nodeList if tracking
-  if (model->persistNodes()) {
-    model->addNode(this);
-  }
 }
 
 #else // CBC_NEW_CREATEINFO
@@ -5721,6 +5720,9 @@ CbcNode::CbcNode(const CbcNode &rhs)
     assert((state_ & 2) != 0);
   else
     assert((state_ & 2) == 0);
+  nodeMapLeafStatus_ = rhs.nodeMapLeafStatus_;
+  nodeMapLineage_ = rhs.nodeMapLineage_;
+  nodeMapIndex_ = rhs.nodeMapIndex_;
 }
 
 CbcNode &
@@ -5747,6 +5749,9 @@ CbcNode::operator=(const CbcNode &rhs)
       assert((state_ & 2) != 0);
     else
       assert((state_ & 2) == 0);
+    nodeMapLeafStatus_ = rhs.nodeMapLeafStatus_;
+    nodeMapLineage_ = rhs.nodeMapLineage_;
+    nodeMapIndex_ = rhs.nodeMapIndex_;
   }
   return *this;
 }
