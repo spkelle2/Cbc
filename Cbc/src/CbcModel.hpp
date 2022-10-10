@@ -2747,6 +2747,11 @@ public:
   {
     return *nodeMap_;
   }
+  /// Creates a deep copy of lp with constraints standardized to Ax >= b
+  std::shared_ptr<ClpSimplex> standardizeLp(ClpSimplex* lp);
+
+  /// Update the attributes of the current node in the nodeMap and initialize attributes of its child if necessary
+  void updateNodeMap(CbcNode *& node, CbcNode *& newNode);
 
   //---------------------------------------------------------------------------
 

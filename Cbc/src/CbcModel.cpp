@@ -12,6 +12,7 @@
 
 #include <string>
 #include <memory>
+#include <valarray>
 //#define CBC_DEBUG 1
 //#define CHECK_CUT_COUNTS
 //#define CHECK_NODE
@@ -17010,24 +17011,7 @@ int CbcModel::doOneNode(CbcModel *baseModel, CbcNode *&node, CbcNode *&newNode)
     }
     // if we persist nodes and are in the main branch and bound loop
     if (persistNodes_ && (specialOptions_ & 2048) == 0){
-      // copy the node and its lp to get their current snapshot
-      OsiClpSolverInterface* osi = dynamic_cast<OsiClpSolverInterface*>(solver_);
-      std::shared_ptr<ClpSimplex> lp = std::make_shared<ClpSimplex>(*osi->getModelPtr());
-      std::shared_ptr<CbcNode> n = std::make_shared<CbcNode>(*node);
-
-      // record node's location in the nodeMap
-      int nodeIndex = nodeMap_->size();
-      n->nodeMapIndex(nodeIndex);
-      n->nodeMapLineage(nodeIndex);
-
-      // If a new node is created that will go into the tree (i.e. isn't a solution)
-      if (newNode && newNode->branchingObject()){
-        n->nodeMapLeafStatus(0);  // current node is no longer a leaf
-        newNode->nodeMapLeafStatus(1);  // but newNode now is
-        // newNode's lineage is same as node's just with newNode's index added when fathomed
-        newNode->nodeMapLineage(n->nodeMapLineage());
-      }
-      nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(n, lp));
+      updateNodeMap(node, newNode);
     }
     if (parallelMode() >= 0)
       assert(!newNode || newNode->objectiveValue() <= getCutoff());
@@ -19602,3 +19586,72 @@ CbcModel::deleteNode(CbcNode * node)
   }
 }
 
+/* Creates a deep copy of lp with constraints standardized to Ax >= b */
+std::shared_ptr<ClpSimplex> CbcModel::standardizeLp(ClpSimplex* lp){
+  std::shared_ptr<ClpSimplex> standardLp = std::make_shared<ClpSimplex>();
+  // copy the current lp and standardize so it's Ax >= b
+  assert(lp->matrix()->isColOrdered());
+  std::vector <std::vector<int> > indices(lp->numberRows());
+  std::vector <std::vector<double> > elements(lp->numberRows());
+
+  for (int columnIndex = 0; columnIndex < lp->numberColumns(); columnIndex++){
+    // create columns
+    standardLp->addColumn(0, NULL, NULL, lp->columnLower()[columnIndex],
+                          lp->columnUpper()[columnIndex], lp->objective()[columnIndex]);
+    // set integrality
+    if (lp->isInteger(columnIndex)){
+      standardLp->setInteger(columnIndex);
+    }
+    // get row representation for the matrix
+    for (int elementIndex = lp->matrix()->getVectorFirst(columnIndex);
+         elementIndex < lp->matrix()->getVectorLast(columnIndex); elementIndex++){
+      int rowIndex = lp->matrix()->getIndices()[elementIndex];
+      double element = lp->matrix()->getElements()[elementIndex];
+      indices[rowIndex].push_back(columnIndex);
+      elements[rowIndex].push_back(element);
+    }
+  }
+  // create rows
+  for (int rowIndex = 0; rowIndex < lp->numberRows(); rowIndex++){
+    // add lower bounded row
+    if (lp->getRowLower()[rowIndex] > -COIN_DBL_MAX){
+      standardLp->addRow(elements[rowIndex].size(), &indices[rowIndex][0],
+                         &elements[rowIndex][0], lp->getRowLower()[rowIndex], COIN_DBL_MAX);
+    }
+    // convert upper bounded row to lower and then add it
+    if (lp->getRowUpper()[rowIndex] < COIN_DBL_MAX){
+      std::valarray<double> negativeElements(elements[rowIndex].data(),
+                                             elements[rowIndex].size());
+      negativeElements *= -1.0;
+      standardLp->addRow(elements[rowIndex].size(), &indices[rowIndex][0],
+                         &negativeElements[0], -1.0*lp->getRowUpper()[rowIndex], COIN_DBL_MAX);
+    }
+  }
+  return standardLp;
+}
+
+
+/* Update the attributes of the current node in the nodeMap and initialize attributes
+of its child if necessary */
+void CbcModel::updateNodeMap(CbcNode *& node, CbcNode *& newNode){
+  assert((specialOptions_ & 2048) == 0);  // must be in main branch and bound loop
+
+  // copy the node and its lp to get their current snapshot
+  OsiClpSolverInterface *osi = dynamic_cast<OsiClpSolverInterface *>(solver_);
+  std::shared_ptr <ClpSimplex> lp = standardizeLp(osi->getModelPtr());
+  std::shared_ptr <CbcNode> n = std::make_shared<CbcNode>(*node);
+
+  // record node's location in the nodeMap
+  int nodeIndex = nodeMap_->size();
+  n->nodeMapIndex(nodeIndex);
+  n->nodeMapLineage(nodeIndex);
+
+  // If a new node is created that will go into the tree (i.e. isn't a solution)
+  if (newNode && newNode->branchingObject()) {
+    n->nodeMapLeafStatus(0);  // current node is no longer a leaf
+    newNode->nodeMapLeafStatus(1);  // but newNode now is
+    // newNode's lineage is same as node's just with newNode's index added when fathomed
+    newNode->nodeMapLineage(n->nodeMapLineage());
+  }
+  nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(n, lp));
+}
