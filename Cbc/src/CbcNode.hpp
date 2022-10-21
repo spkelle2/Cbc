@@ -377,6 +377,30 @@ public:
   {
     nodeMapIndex_ = index;
   }
+  inline int branchVariable() const
+  {
+    return branchVariable_;
+  }
+  inline void branchVariable(int index)
+  {
+    branchVariable_ = index;
+  }
+  inline int branchWay() const
+  {
+    return branchWay_;
+  }
+  inline void branchWay(int direction)
+  {
+    branchWay_ = direction;
+  }
+  inline int lpFeasible() const
+  {
+    return lpFeasible_;
+  }
+  inline void lpFeasible(int status)
+  {
+    lpFeasible_ = status;
+  }
 
 private:
   // Data
@@ -403,12 +427,18 @@ private:
   int state_;
   /// below here can be moved into its own object at some point need be
   /// keeping here for development to make it easier to move to CyLP since CyCbcNode already exists
-  /// -1 uninitialized, 0 not a leaf, 1 is leaf, relative to the nodes stored in CbcModel.nodeMap
+  /// 0 not a leaf; 1 is leaf; relative to the nodes stored in CbcModel.nodeMap
   int nodeMapLeafStatus_;
   /// Vector of indices of CbcModel.nodeMap representing the ancestors (including self) of this node
   std::vector<int> nodeMapLineage_;
   /// Index of this node in CbcModel.nodeMap, -1 means uninitialized
   int nodeMapIndex_;
+  /// which variable was branched on to create this node (-1 for uninitialized)
+  int branchVariable_;
+  /// which direction this node branches first (-1 for down/left, 1 for up/right, 0 uninitialized)
+  int branchWay_;
+  /// feasibility of node's LP relaxation (0: unknown, 1: feasible, 2: infeasible)
+  int lpFeasible_;
 };
 
 #endif

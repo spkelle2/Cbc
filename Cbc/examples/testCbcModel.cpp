@@ -78,8 +78,7 @@ CbcEventHandler::CbcAction SolHandler::event(CbcEvent whichEvent)
   return noAction;
 }
 
-int main(int argc, char **argv)
-{
+int testStandardizeLp(){
   CbcSolverUsefulData cbcData;
   cbcData.noPrinting_ = false;
 
@@ -115,7 +114,9 @@ int main(int argc, char **argv)
   model.passInEventHandler(&sh);
 
   CbcMain0(model, cbcData);
-  CbcMain1(argc - 1, (const char **)(argv + 1), model, callBack, cbcData);
+  const char* argv[] = {"-cuts", "off", "-heuristics", "off", "-preprocess", "off", "-presolve",
+                        "off", "-strong", "0", "-log", "3", "-passC", "0", "-passT", "0", "-solve"};
+  CbcMain1(17, argv, model, callBack, cbcData);
 
   // check number of nodes
   assert(model.nodeMap().size() == 3);
@@ -142,6 +143,43 @@ int main(int argc, char **argv)
     assert(model.nodeMap()[0].second->matrix()->getElements()[idx] == elements[idx]);
     assert(model.nodeMap()[0].second->matrix()->getIndices()[idx] == indices[idx]);
   }
+  return 0;
+}
 
+int testUpdateNodeMap(){
+  CbcSolverUsefulData cbcData;
+  cbcData.noPrinting_ = false;
+
+  // set up lp solver
+  OsiClpSolverInterface lp;
+  lp.readMps("/Users/sean/coin-or/Data/Sample/p0201.mps");
+
+  // set up branch and cut solver
+  CbcModel model(lp);
+  model.persistNodes(true);
+  SolHandler sh;
+  model.passInEventHandler(&sh);
+
+  CbcMain0(model, cbcData);
+  const char* argv[] = {"-preprocess", "off", "-presolve", "off", "-solve"};
+  CbcMain1(5, argv, model, callBack, cbcData);
+
+  for (int node_idx = 0; node_idx < model.nodeMap().size(); node_idx++){
+    model.nodeMap()[node_idx].second.get()->dual();
+    if (model.nodeMap()[node_idx].first.get()->lpFeasible() == 1){
+      assert(model.nodeMap()[node_idx].second.get()->primalFeasible());
+    } else if (model.nodeMap()[node_idx].first.get()->lpFeasible() == 2){
+      assert(!model.nodeMap()[node_idx].second.get()->primalFeasible());
+    } else {
+      assert(model.nodeMap()[node_idx].first.get()->lpFeasible() == 0);
+    }
+  }
+  return 0;
+}
+
+int main(int argc, char **argv)
+{
+  testStandardizeLp();
+  testUpdateNodeMap();
   return 0;
 }

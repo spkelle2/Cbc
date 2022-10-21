@@ -19638,6 +19638,8 @@ void CbcModel::updateNodeMap(CbcNode *& node, CbcNode *& newNode){
 
   // copy the node and its lp to get their current snapshot
   OsiClpSolverInterface *osi = dynamic_cast<OsiClpSolverInterface *>(solver_);
+  const CbcBranchingObject *branchingObject = dynamic_cast<const CbcBranchingObject *>(node->branchingObject());
+  // have to deep copy b/c osi->getModelPtr() gets deleted before main execution ends
   std::shared_ptr <ClpSimplex> lp = standardizeLp(osi->getModelPtr());
   std::shared_ptr <CbcNode> n = std::make_shared<CbcNode>(*node);
 
@@ -19645,13 +19647,26 @@ void CbcModel::updateNodeMap(CbcNode *& node, CbcNode *& newNode){
   int nodeIndex = nodeMap_->size();
   n->nodeMapIndex(nodeIndex);
   n->nodeMapLineage(nodeIndex);
+  n->branchVariable(branchingObject->variable());
+  n->branchWay(branchingObject->way());
 
-  // If a new node is created that will go into the tree (i.e. isn't a solution)
-  if (newNode && newNode->branchingObject()) {
-    n->nodeMapLeafStatus(0);  // current node is no longer a leaf
-    newNode->nodeMapLeafStatus(1);  // but newNode now is
-    // newNode's lineage is same as node's just with newNode's index added when fathomed
-    newNode->nodeMapLineage(n->nodeMapLineage());
+  if (newNode) {
+    n->lpFeasible(1);
+    // If a new node is created that will go into the tree (i.e. isn't a solution)
+    if (newNode->branchingObject()) {
+      // this isn't accurate - child node added to tree but not always evaluated, leaving this as leaf
+      n->nodeMapLeafStatus(0);  // current node is no longer a leaf
+      // newNode's lineage is same as node's just with newNode's index added when fathomed
+      newNode->nodeMapLineage(n->nodeMapLineage());
+    }
+  } else {
+    // would use solver_->isProvenPrimalInfeasible(), but needs to be resolved beforehand too
+    // and even then is not always right
+    lp->dual();
+    if (!lp->primalFeasible()) {
+      // std::cout << "node " << nodeIndex << " was pruned on infeasibility" << std::endl;
+      n->lpFeasible(2);
+    }
   }
   nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(n, lp));
 }

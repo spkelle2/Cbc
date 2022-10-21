@@ -68,8 +68,11 @@ CbcNode::CbcNode()
   , numberUnsatisfied_(0)
   , nodeNumber_(-1)
   , state_(0)
-  , nodeMapLeafStatus_(-1)
+  , nodeMapLeafStatus_(1)
   , nodeMapIndex_(-1)
+  , branchVariable_(-1)
+  , branchWay_(0)
+  , lpFeasible_(0)
 {
 #ifdef CHECK_NODE
   printf("CbcNode %p Constructor\n", this);
@@ -94,6 +97,9 @@ CbcNode::CbcNode(CbcModel *model,
   , state_(0)
   , nodeMapLeafStatus_(-1)
   , nodeMapIndex_(-1)
+  , branchVariable_(-1)
+  , branchWay_(0)
+  , lpFeasible_(0)
 {
 #ifdef CHECK_NODE
   printf("CbcNode %p Constructor from model\n", this);
@@ -5723,6 +5729,9 @@ CbcNode::CbcNode(const CbcNode &rhs)
   nodeMapLeafStatus_ = rhs.nodeMapLeafStatus_;
   nodeMapLineage_ = rhs.nodeMapLineage_;
   nodeMapIndex_ = rhs.nodeMapIndex_;
+  branchVariable_ = rhs.branchVariable_;
+  branchWay_ = rhs.branchWay_;
+  lpFeasible_ = rhs.lpFeasible_;
 }
 
 CbcNode &
@@ -5752,6 +5761,9 @@ CbcNode::operator=(const CbcNode &rhs)
     nodeMapLeafStatus_ = rhs.nodeMapLeafStatus_;
     nodeMapLineage_ = rhs.nodeMapLineage_;
     nodeMapIndex_ = rhs.nodeMapIndex_;
+    branchVariable_ = rhs.branchVariable_;
+    branchWay_ = rhs.branchWay_;
+    lpFeasible_ = rhs.lpFeasible_;
   }
   return *this;
 }
