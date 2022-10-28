@@ -9,11 +9,13 @@
 #include <OsiCbcSolverInterface.hpp>
 #include "OsiClpSolverInterface.hpp"
 #include <CbcModel.hpp>
+#include <CbcNode.hpp>
 #include <CglPreProcess.hpp>
 #include <CbcSolver.hpp>
 #include <Cbc_C_Interface.h>
 #include "CbcEventHandler.hpp"
 #include "ClpEventHandler.hpp"
+#include <ClpSimplex.hpp>
 
 static int callBack(CbcModel *model, int whereFrom)
 {
@@ -146,6 +148,43 @@ int testStandardizeLp(){
   return 0;
 }
 
+int checkTree(CbcModel &model){
+  for (int node_idx = 0; node_idx < model.nodeMap().size(); node_idx++){
+    CbcNode * n = model.nodeMap()[node_idx].first.get();
+    ClpSimplex * lp = model.nodeMap()[node_idx].second.get();
+
+    // if node is a leaf, no children, else it should have two
+    if (n->nodeMapLeafStatus()){
+      assert(!n->children().size());
+    } else {
+      assert(n->children().size() == 2);
+    }
+
+    // make sure that feasibility status matches feasibility of node
+    // make sure process status represents the node being processed
+    lp->dual();
+    if (n->lpFeasible() == 1){
+      assert(lp->primalFeasible());
+      assert(n->processed());
+    } else if (n->lpFeasible() == 2){
+      assert(!lp->primalFeasible());
+      assert(n->processed());
+    } else {
+      assert(n->lpFeasible() == 0);
+      // if the node wasn't processed, make sure the LP at least enforces the branching decision
+      if (!n->processed()){
+        double val = lp->primalColumnSolution()[n->branchVariable()];
+        if (n->branchWay() == -1){
+          assert(val == floor(n->branchVariableValue()));
+        } else {
+          assert(val == ceil(n->branchVariableValue()));
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 int testUpdateNodeMap(){
   CbcSolverUsefulData cbcData;
   cbcData.noPrinting_ = false;
@@ -164,16 +203,39 @@ int testUpdateNodeMap(){
   const char* argv[] = {"-preprocess", "off", "-presolve", "off", "-solve"};
   CbcMain1(5, argv, model, callBack, cbcData);
 
-  for (int node_idx = 0; node_idx < model.nodeMap().size(); node_idx++){
-    model.nodeMap()[node_idx].second.get()->dual();
-    if (model.nodeMap()[node_idx].first.get()->lpFeasible() == 1){
-      assert(model.nodeMap()[node_idx].second.get()->primalFeasible());
-    } else if (model.nodeMap()[node_idx].first.get()->lpFeasible() == 2){
-      assert(!model.nodeMap()[node_idx].second.get()->primalFeasible());
-    } else {
-      assert(model.nodeMap()[node_idx].first.get()->lpFeasible() == 0);
-    }
-  }
+  // make sure all nodes (minus root) added to node map
+  // size changes based on OS settings so just check it's big enough
+  assert(model.nodeMap().size() > 40);
+
+  // make sure node attributes as expected throughout tree
+  checkTree(model);
+
+  return 0;
+}
+
+int testUpdateNodeMapPartialSolve(){
+  CbcSolverUsefulData cbcData;
+  cbcData.noPrinting_ = false;
+
+  // set up lp solver
+  OsiClpSolverInterface lp;
+  lp.readMps("/Users/sean/coin-or/Data/Sample/p0201.mps");
+
+  // set up branch and cut solver
+  CbcModel model(lp);
+  model.persistNodes(true);
+  SolHandler sh;
+  model.passInEventHandler(&sh);
+
+  CbcMain0(model, cbcData);
+  const char* argv[] = {"-preprocess", "off", "-presolve", "off", "-maxNodes", "3", "-solve"};
+  CbcMain1(5, argv, model, callBack, cbcData);
+
+  // make sure all nodes (minus root) added to node map
+  assert(model.nodeMap().size() == 7);
+
+  // make sure node attributes as expected throughout tree
+  checkTree(model);
   return 0;
 }
 
@@ -181,5 +243,6 @@ int main(int argc, char **argv)
 {
   testStandardizeLp();
   testUpdateNodeMap();
+  testUpdateNodeMapPartialSolve();
   return 0;
 }

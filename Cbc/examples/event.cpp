@@ -105,14 +105,5 @@ int main(int argc, char **argv)
   model.nodeMap()[0].first.get()->nodeMapLineage();
   model.nodeMap()[0].first.get()->nodeMapLeafStatus();
 
-  for (int node_idx = 0; node_idx < model.nodeMap().size(); node_idx++){
-    if (model.nodeMap()[node_idx].first.get()->feasible() == 0){
-      std::cout << "node " << node_idx << " was pruned on bound" << std::endl;
-    }
-    if (model.nodeMap()[node_idx].first.get()->feasible() == 2){
-      std::cout << "node " << node_idx << " was pruned on infeasibility" << std::endl;
-    }
-  }
-
   return 0;
 }

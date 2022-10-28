@@ -2748,10 +2748,14 @@ public:
     return *nodeMap_;
   }
   /// Creates a deep copy of lp with constraints standardized to Ax >= b
-  std::shared_ptr<ClpSimplex> standardizeLp(ClpSimplex* lp);
+  std::shared_ptr<ClpSimplex> standardizeLp(ClpSimplex* lp, int branchVariable=-1, int branchWay=0,
+                                            double branchVariableValue=-COIN_DBL_MAX);
 
-  /// Update the attributes of the current node in the nodeMap and initialize attributes of its child if necessary
+  /// Update the attributes of the current node and initialize attributes of its child if necessary
   void updateNodeMap(CbcNode *& node, CbcNode *& newNode);
+
+  /// Add all unprocessed nodes to nodeMap
+  void completeNodeMap();
 
   //---------------------------------------------------------------------------
 

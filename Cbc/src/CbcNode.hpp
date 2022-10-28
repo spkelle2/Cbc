@@ -385,6 +385,14 @@ public:
   {
     branchVariable_ = index;
   }
+  inline double branchVariableValue() const
+  {
+    return branchVariable_;
+  }
+  inline void branchVariableValue(double value)
+  {
+    branchVariable_ = value;
+  }
   inline int branchWay() const
   {
     return branchWay_;
@@ -400,6 +408,24 @@ public:
   inline void lpFeasible(int status)
   {
     lpFeasible_ = status;
+  }
+  void setNodeMapAttributes(int nodeIndex, const CbcBranchingObject* branchingObject=NULL);
+  void setNodeMapAttributes(int nodeIndex, std::shared_ptr<CbcNode> siblingNode);
+  inline void addChild(std::shared_ptr<CbcNode> child)
+  {
+    children_.push_back(child);
+  }
+  inline std::vector<std::shared_ptr<CbcNode> > children() const
+  {
+    return children_;
+  }
+  inline bool processed() const
+  {
+    return processed_;
+  }
+  inline void processed(bool wasProcessed)
+  {
+    processed_ = wasProcessed;
   }
 
 private:
@@ -435,10 +461,16 @@ private:
   int nodeMapIndex_;
   /// which variable was branched on to create this node (-1 for uninitialized)
   int branchVariable_;
+  /// what was the value of the branching variable prior to branching
+  double branchVariableValue_;
   /// which direction this node branches first (-1 for down/left, 1 for up/right, 0 uninitialized)
   int branchWay_;
   /// feasibility of node's LP relaxation (0: unknown, 1: feasible, 2: infeasible)
   int lpFeasible_;
+  /// whether or not this node has been processed by branch and bound
+  bool processed_;
+  /// children of this node
+  std::vector<std::shared_ptr<CbcNode> > children_;
 };
 
 #endif
