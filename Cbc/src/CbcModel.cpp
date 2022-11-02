@@ -3605,7 +3605,10 @@ void CbcModel::branchAndBound(int doStatistics)
 
       Loss of feasibility will result in the deletion of newNode.
     */
-
+  // if we persist nodes and are in the main branch and bound loop
+  if (persistNodes_ && (specialOptions_ & 2048) == 0){
+    setPersistentRootNode();
+  }
   bool resolved = false;
   CbcNode *newNode = NULL;
   numberFixedAtRoot_ = 0;
@@ -19589,6 +19592,29 @@ CbcModel::deleteNode(CbcNode * node)
   }
 }
 
+
+/* Create and add a persistent copy of the root node to nodeMap */
+void CbcModel::setPersistentRootNode() {
+
+  assert((specialOptions_ & 2048) == 0);  // must be in main branch and bound loop
+  assert(nodeMap_->size() == 0);  // nodeMap should be empty
+
+  // create the root node and its LP relaxation
+  OsiClpSolverInterface *osi = dynamic_cast<OsiClpSolverInterface *>(solver_);
+  std::shared_ptr <ClpSimplex> lp = standardizeLp(osi->getModelPtr());
+  std::shared_ptr <CbcNode> root = std::make_shared<CbcNode>();
+
+  // update root node attributes
+  root->nodeMapIndex(0);
+  root->nodeMapLineage(0);
+  root->nodeMapLeafStatus(0);
+  root->lpFeasible(true);
+  root->processed(true);
+  
+  // add it to nodeMap
+  nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(root, lp));
+}
+
 /* Creates a deep copy of lp with constraints standardized to Ax >= b
  * optionally adds an additional branching constraint if nondefault arguments provided */
 std::shared_ptr<ClpSimplex> CbcModel::standardizeLp(ClpSimplex* lp, int branchVariable,
@@ -19599,6 +19625,9 @@ std::shared_ptr<ClpSimplex> CbcModel::standardizeLp(ClpSimplex* lp, int branchVa
     assert(0 <= branchVariable && branchVariable < lp->numberColumns());
     // branchWay should be properly assigned
     assert(branchWay == -1 || branchWay == 1);
+    // branchVariableValue should be between bounds of current LP
+    assert(lp->columnLower()[branchVariable] <= branchVariableValue &&
+        branchVariableValue <= lp->columnUpper()[branchVariable]);
   } else {
     // branchVariable "nonnull" iff branchWay "nonnull" iff branchVariableValue = -inf
     assert(branchVariable == -1 && branchWay == 0 && branchVariableValue == -COIN_DBL_MAX);
@@ -19666,44 +19695,64 @@ void CbcModel::updateNodeMap(CbcNode *& node, CbcNode *& newNode){
   std::shared_ptr <ClpSimplex> nLp = standardizeLp(osi->getModelPtr());
   std::shared_ptr <CbcNode> n = std::make_shared<CbcNode>();
 
-  // root children never show up as newNode, thus aren't already in nodeMap
-  if (node->nodeMapIndex() < 0){
-    const CbcBranchingObject *branchingObject =
-        dynamic_cast<const CbcBranchingObject *>(node->branchingObject());
-    n->setNodeMapAttributes(nodeMap_->size(), branchingObject);
+  // special handling for first node (i.e. previously unseen) or those seen twice already
+  if (nodeMap_->size() == 1 || node->processed()){
+    if (nodeMap_->size() == 1) {
+      CbcNode * root = nodeMap_->at(0).first.get();
+      // root children never show up as newNode, thus don't have any attributes set
+      const CbcBranchingObject *branchingObject =
+          dynamic_cast<const CbcBranchingObject *>(node->branchingObject());
+      n->nodeMapLineage(root->nodeMapLineage());
+      n->setNodeMapAttributes(nodeMap_->size(), branchingObject);
+      // set attributes to use for creating sibling
+      node->nodeMapLineage(root->nodeMapLineage());
+      node->setNodeMapAttributes(nodeMap_->size());
+    }
+    else {
+      // if node was processed before, we need a new node to represent the new branch
+      n->setNodeMapAttributes(nodeMap_->size(), node);
+    }
+
+    // add the node to the map and record familial relationship
     nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(n, nLp));
-  } else {
-    // otherwise get the node's nonsegfaultable copy from nodeMap (has no cut references)
+    nodeMap_->at(n->nodeMapLineage()[n->nodeMapLineage().size()-2]).first->addChild(n);
+  }
+  else {
+    // otherwise get the node's copy from nodeMap created when it was passed through as newNode
     n = nodeMap_->at(node->nodeMapIndex()).first;
-    // update in the map
+    // update its LP the map
     nodeMap_->at(n->nodeMapIndex()) =
         std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(n, nLp);
   }
+  node->processed(true);
   n->processed(true);
 
   if (newNode) {
-    n->lpFeasible(1);
+    n->lpFeasible(1);  // if new node we either branched or found solution, i.e. feasible
+
     // If a new node is created that will go into the tree (i.e. isn't a solution)
     if (newNode->branchingObject()) {
+
       // set attributes so we can pick its copy out from nodeMap in the future
+      // either when it returns as "node" or from branch and bound tree upon termination
+      newNode->nodeMapLineage(n->nodeMapLineage());
       newNode->setNodeMapAttributes(nodeMap_->size());
+
+      // create a pairing for newNode in nodeMap
       std::shared_ptr <CbcNode> newN = std::make_shared<CbcNode>();
+      newN->nodeMapLineage(n->nodeMapLineage());
       const CbcBranchingObject *newBranchingObject =
           dynamic_cast<const CbcBranchingObject *>(newNode->branchingObject());
       newN->setNodeMapAttributes(nodeMap_->size(), newBranchingObject);
       std::shared_ptr <ClpSimplex> newLp =
           standardizeLp(osi->getModelPtr(), newBranchingObject->variable(),
                         newBranchingObject->way(), newBranchingObject->value());
-      // marking n no longer leaf not accurate as sometimes leaves disappear
-      // to compensate for this, removed leaf status and find leaves at end
-      // actually lets check this with the new code
-      n->nodeMapLeafStatus(0);  // current node is no longer a leaf
-      n->addChild(newN);
-      // newNode's lineage is same as node's just with newNode's index added when fathomed
-      newN->nodeMapLineage(n->nodeMapLineage());
       // put a placeholder LP in for newNode
-      // could be improved by going through nodeInfo to find the cuts that will be used
       nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(newN, newLp));
+
+      // finish updating attributes for n
+      n->nodeMapLeafStatus(0);
+      n->addChild(newN);
     }
   } else {
     // would use solver_->isProvenPrimalInfeasible(), but needs to be resolved beforehand too
@@ -19725,7 +19774,7 @@ void CbcModel::completeNodeMap(){
     std::shared_ptr <CbcNode> n = nodeMap_->at(nodeIdx).first;
     if (n->children().size() == 1){
       ClpSimplex* lp = nodeMap_->at(nodeIdx).second.get();
-      std::shared_ptr <CbcNode> existingChild = n->children()[0];
+      CbcNode* existingChild = n->children()[0].get();
 
       // create the new node to be added to the nodeMap
       std::shared_ptr <CbcNode> newChild = std::make_shared<CbcNode>();
@@ -19736,8 +19785,10 @@ void CbcModel::completeNodeMap(){
           standardizeLp(lp, newChild->branchVariable(), newChild->branchWay(),
                         newChild->branchVariableValue());
       nodeMap_->push_back(std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> >(newChild, newLp));
+
+      // add to parent's list of children and iterate
+      n->addChild(newChild);
       nextNodeIdx++;
     }
   }
-
 }

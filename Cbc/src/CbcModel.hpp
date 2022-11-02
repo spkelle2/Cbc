@@ -2747,6 +2747,9 @@ public:
   {
     return *nodeMap_;
   }
+  /// Create and add a persistent copy of the root node to nodeMap
+  void setPersistentRootNode();
+
   /// Creates a deep copy of lp with constraints standardized to Ax >= b
   std::shared_ptr<ClpSimplex> standardizeLp(ClpSimplex* lp, int branchVariable=-1, int branchWay=0,
                                             double branchVariableValue=-COIN_DBL_MAX);

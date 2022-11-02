@@ -387,11 +387,11 @@ public:
   }
   inline double branchVariableValue() const
   {
-    return branchVariable_;
+    return branchVariableValue_;
   }
   inline void branchVariableValue(double value)
   {
-    branchVariable_ = value;
+    branchVariableValue_ = value;
   }
   inline int branchWay() const
   {
@@ -410,7 +410,7 @@ public:
     lpFeasible_ = status;
   }
   void setNodeMapAttributes(int nodeIndex, const CbcBranchingObject* branchingObject=NULL);
-  void setNodeMapAttributes(int nodeIndex, std::shared_ptr<CbcNode> siblingNode);
+  void setNodeMapAttributes(int nodeIndex, CbcNode* siblingNode);
   inline void addChild(std::shared_ptr<CbcNode> child)
   {
     children_.push_back(child);

@@ -6236,11 +6236,12 @@ void CbcNode::setNodeMapAttributes(int nodeIndex, const CbcBranchingObject* bran
   nodeMapLineage_.push_back(nodeIndex);
   branchVariable_ = branchingObject->variable();
   branchVariableValue_ = branchingObject->value();
-  branchWay_ = branchingObject->way();
+  // if 1 branch left, branch has been updated but LP has not, so record original branch
+  branchWay_ = branchingObject->numberBranchesLeft() == 2 ? branchingObject->way() : -1*branchingObject->way();
 }
 
 /* Sets this node's attributes pertaining to CbcModel.nodeMap */
-void CbcNode::setNodeMapAttributes(int nodeIndex, std::shared_ptr<CbcNode> siblingNode){
+void CbcNode::setNodeMapAttributes(int nodeIndex, CbcNode* siblingNode){
 
   nodeMapIndex_ = nodeIndex;
   nodeMapLineage_ = siblingNode->nodeMapLineage_;
