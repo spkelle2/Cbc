@@ -5707,7 +5707,7 @@ CbcModel::CbcModel()
   messages_ = CbcMessage();
   //eventHandler_ = new CbcEventHandler() ;
   nodeMap_ = std::make_shared<std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > >();
-  rootBound_ = std::make_shared<std::vector<double> >();
+  rootCutsDualBound_ = std::make_shared<std::vector<double> >();
 }
 
 /** Constructor from solver.
@@ -5922,7 +5922,7 @@ CbcModel::CbcModel(const OsiSolverInterface &rhs)
     integerVariable_ = NULL;
   }
   nodeMap_ = std::make_shared<std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > >();
-  rootBound_ = std::make_shared<std::vector<double> >();
+  rootCutsDualBound_ = std::make_shared<std::vector<double> >();
 }
 
 static int *resizeInt(int *array, int oldLength, int newLength)
@@ -6129,7 +6129,7 @@ CbcModel::CbcModel(const CbcModel &rhs, bool cloneHandler)
   , masterThread_(NULL)
   , persistNodes_(rhs.persistNodes_)
   , nodeMap_(rhs.nodeMap_)
-  , rootBound_(rhs.rootBound_)
+  , rootCutsDualBound_(rhs.rootCutsDualBound_)
 {
   memcpy(intParam_, rhs.intParam_, sizeof(intParam_));
   memcpy(dblParam_, rhs.dblParam_, sizeof(dblParam_));
@@ -8470,7 +8470,7 @@ bool CbcModel::solveWithCuts(OsiCuts &cuts, int numberTries, CbcNode *node)
         << trueObjValue(solver_->getObjValue())
         << CoinMessageEol;
       if (persistNodes_){
-        rootBound_->push_back(trueObjValue(solver_->getObjValue()));
+        rootCutsDualBound_->push_back(trueObjValue(solver_->getObjValue()));
       }
     }
     //Is Necessary for Bonmin? Always keepGoing if cuts have been generated in last iteration (taken from similar code in Cbc-2.4)

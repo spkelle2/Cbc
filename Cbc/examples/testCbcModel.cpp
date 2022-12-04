@@ -272,7 +272,7 @@ int testUpdateNodeMapPartialSolve(){
   return 0;
 }
 
-int testRootBound(){
+int testrootCutsDualBound(){
   CbcSolverUsefulData cbcData;
   cbcData.noPrinting_ = false;
 
@@ -293,14 +293,14 @@ int testRootBound(){
   CbcMain1(11, argv, model, callBack, cbcData);
 
   // make sure we have exactly as many entries as rounds of root cuts
-  assert(model.rootBound().size() == 20);
+  assert(model.rootCutsDualBound().size() == 20);
 
   // make sure first matches LP relax
-  assert(abs(model.rootBound()[0] - 6875) < .01);
+  assert(abs(model.rootCutsDualBound()[0] - 6875) < .01);
 
   // make sure monotone
-  for (int pass_idx = 1; pass_idx < model.rootBound().size(); pass_idx++){
-    assert(model.rootBound()[pass_idx] >= model.rootBound()[pass_idx-1]);
+  for (int pass_idx = 1; pass_idx < model.rootCutsDualBound().size(); pass_idx++){
+    assert(model.rootCutsDualBound()[pass_idx] >= model.rootCutsDualBound()[pass_idx-1]);
   }
 
   return 0;
@@ -311,6 +311,6 @@ int main(int argc, char **argv)
   testStandardizeLp();
   testUpdateNodeMap();
   testUpdateNodeMapPartialSolve();
-  testRootBound();
+  testrootCutsDualBound();
   return 0;
 }

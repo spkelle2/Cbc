@@ -2747,10 +2747,10 @@ public:
   {
     return *nodeMap_;
   }
-  /// Get the root bound at each cut generation iteration
-  inline std::vector<double> rootBound() const
+  /// Get the dual bound at each root cut generation iteration
+  inline std::vector<double> rootCutsDualBound() const
   {
-    return *rootBound_;
+    return *rootCutsDualBound_;
   }
   /// Create and add a persistent copy of the root node to nodeMap
   void setPersistentRootNode();
@@ -3296,7 +3296,7 @@ private:
   std::shared_ptr<std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > > nodeMap_;
   /// Root dual bound value after each round of cut generation
   /// outer shared pointer is so it won't get deleted until garbage collection
-  std::shared_ptr<std::vector<double> > rootBound_;
+  std::shared_ptr<std::vector<double> > rootCutsDualBound_;
   //@}
 };
 /// So we can use osiObject or CbcObject during transition
