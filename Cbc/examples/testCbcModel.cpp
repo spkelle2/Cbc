@@ -1,5 +1,4 @@
 // testCbcModel.cpp tests for sean's additions to CbcModel
-// run args: -cuts off -heuristics off -preprocess off -presolve off -strong 0 -log 3 -passC 0 -passT 0 -solve
 // add -std=c++11 to ADDINCFLAGS in line 39 of makefile in <build-folder>/cbc/<version>/examples
 
 #include <iostream>
@@ -273,10 +272,45 @@ int testUpdateNodeMapPartialSolve(){
   return 0;
 }
 
+int testRootBound(){
+  CbcSolverUsefulData cbcData;
+  cbcData.noPrinting_ = false;
+
+  // set up lp solver
+  OsiClpSolverInterface lp;
+  lp.readMps("/Users/sean/coin-or/Data/Sample/p0201.mps");
+
+  // set up branch and cut solver
+  CbcModel model(lp);
+  model.persistNodes(true);
+  SolHandler sh;
+  model.passInEventHandler(&sh);
+
+  CbcMain0(model, cbcData);
+  const char* argv[] = {"-import", "/Users/sean/coin-or/Data/Sample/p0201.mps",
+                        "-preprocess", "off", "-presolve", "off",
+                        "-passC", "-20", "-log", "3", "-solve"};
+  CbcMain1(11, argv, model, callBack, cbcData);
+
+  // make sure we have exactly as many entries as rounds of root cuts
+  assert(model.rootBound().size() == 20);
+
+  // make sure first matches LP relax
+  assert(abs(model.rootBound()[0] - 6875) < .01);
+
+  // make sure monotone
+  for (int pass_idx = 1; pass_idx < model.rootBound().size(); pass_idx++){
+    assert(model.rootBound()[pass_idx] >= model.rootBound()[pass_idx-1]);
+  }
+
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
   testStandardizeLp();
   testUpdateNodeMap();
   testUpdateNodeMapPartialSolve();
+  testRootBound();
   return 0;
 }
