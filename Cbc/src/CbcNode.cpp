@@ -23,6 +23,7 @@
 #define COIN_DETAIL
 #endif
 #include <string>
+#include <memory>
 //#define CBC_DEBUG 1
 //#define CHECK_CUT_COUNTS
 //#define CHECK_NODE

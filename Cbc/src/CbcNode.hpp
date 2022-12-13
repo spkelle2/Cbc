@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "CoinWarmStartBasis.hpp"
 #include "CoinSearchTree.hpp"
