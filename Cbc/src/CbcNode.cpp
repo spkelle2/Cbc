@@ -23,6 +23,7 @@
 #define COIN_DETAIL
 #endif
 #include <string>
+#include <memory>
 //#define CBC_DEBUG 1
 //#define CHECK_CUT_COUNTS
 //#define CHECK_NODE
@@ -68,6 +69,13 @@ CbcNode::CbcNode()
   , numberUnsatisfied_(0)
   , nodeNumber_(-1)
   , state_(0)
+  , nodeMapLeafStatus_(1)
+  , nodeMapIndex_(-1)
+  , branchVariable_(-1)
+  , branchVariableValue_(-COIN_DBL_MAX)
+  , branchWay_(0)
+  , lpFeasible_(0)
+  , processed_(false)
 {
 #ifdef CHECK_NODE
   printf("CbcNode %p Constructor\n", this);
@@ -90,6 +98,13 @@ CbcNode::CbcNode(CbcModel *model,
   , numberUnsatisfied_(0)
   , nodeNumber_(-1)
   , state_(0)
+  , nodeMapLeafStatus_(-1)
+  , nodeMapIndex_(-1)
+  , branchVariable_(-1)
+  , branchVariableValue_(-COIN_DBL_MAX)
+  , branchWay_(0)
+  , lpFeasible_(0)
+  , processed_(false)
 {
 #ifdef CHECK_NODE
   printf("CbcNode %p Constructor from model\n", this);
@@ -5716,6 +5731,15 @@ CbcNode::CbcNode(const CbcNode &rhs)
     assert((state_ & 2) != 0);
   else
     assert((state_ & 2) == 0);
+  nodeMapLeafStatus_ = rhs.nodeMapLeafStatus_;
+  nodeMapLineage_ = rhs.nodeMapLineage_;
+  nodeMapIndex_ = rhs.nodeMapIndex_;
+  branchVariable_ = rhs.branchVariable_;
+  branchVariableValue_ = rhs.branchVariableValue_;
+  branchWay_ = rhs.branchWay_;
+  lpFeasible_ = rhs.lpFeasible_;
+  children_ = rhs.children_;
+  processed_ = rhs.processed_;
 }
 
 CbcNode &
@@ -5742,6 +5766,15 @@ CbcNode::operator=(const CbcNode &rhs)
       assert((state_ & 2) != 0);
     else
       assert((state_ & 2) == 0);
+    nodeMapLeafStatus_ = rhs.nodeMapLeafStatus_;
+    nodeMapLineage_ = rhs.nodeMapLineage_;
+    nodeMapIndex_ = rhs.nodeMapIndex_;
+    branchVariable_ = rhs.branchVariable_;
+    branchVariableValue_ = rhs.branchVariableValue_;
+    branchWay_ = rhs.branchWay_;
+    lpFeasible_ = rhs.lpFeasible_;
+    children_ = rhs.children_;
+    processed_ = rhs.processed_;
   }
   return *this;
 }
@@ -6189,6 +6222,34 @@ CbcNode::checkIsCutoff(double cutoff)
 {
   branch_->checkIsCutoff(cutoff);
   return objectiveValue_;
+}
+
+/* Sets this node's attributes pertaining to CbcModel.nodeMap */
+void CbcNode::setNodeMapAttributes(int nodeIndex, const CbcBranchingObject* branchingObject){
+
+  // if no branching object provided, use the one in scope
+  if (!branchingObject){
+    assert(this->branchingObject());
+    branchingObject = dynamic_cast<const CbcBranchingObject *>(this->branchingObject());
+  }
+
+  nodeMapIndex_ = nodeIndex;
+  nodeMapLineage_.push_back(nodeIndex);
+  branchVariable_ = branchingObject->variable();
+  branchVariableValue_ = branchingObject->value();
+  // if 1 branch left, branch has been updated but LP has not, so record original branch
+  branchWay_ = branchingObject->numberBranchesLeft() == 2 ? branchingObject->way() : -1*branchingObject->way();
+}
+
+/* Sets this node's attributes pertaining to CbcModel.nodeMap */
+void CbcNode::setNodeMapAttributes(int nodeIndex, CbcNode* siblingNode){
+
+  nodeMapIndex_ = nodeIndex;
+  nodeMapLineage_ = siblingNode->nodeMapLineage_;
+  nodeMapLineage_.back() = nodeIndex;
+  branchVariable_ = siblingNode->branchVariable_;
+  branchVariableValue_ = siblingNode->branchVariableValue_;
+  branchWay_ = -1*siblingNode->branchWay_;
 }
 
 /* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2

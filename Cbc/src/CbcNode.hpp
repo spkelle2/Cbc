@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "CoinWarmStartBasis.hpp"
 #include "CoinSearchTree.hpp"
@@ -15,6 +16,7 @@
 #include "CbcNodeInfo.hpp"
 #include "CbcFullNodeInfo.hpp"
 #include "CbcPartialNodeInfo.hpp"
+#include "ClpSimplex.hpp"
 
 class OsiSolverInterface;
 class OsiSolverBranch;
@@ -348,6 +350,84 @@ public:
   {
     assert(nodeInfo_->numberBranchesLeft() == branch_->numberBranchesLeft());
   }
+  inline int nodeMapLeafStatus() const
+  {
+    return nodeMapLeafStatus_;
+  }
+  inline void nodeMapLeafStatus(int leafStatus)
+  {
+    nodeMapLeafStatus_ = leafStatus;
+  }
+  inline std::vector<int> nodeMapLineage() const
+  {
+    return nodeMapLineage_;
+  }
+  inline void nodeMapLineage(std::vector<int> lineage)
+  {
+    nodeMapLineage_ = lineage;
+  }
+  inline void nodeMapLineage(int nodeIndex)
+  {
+    nodeMapLineage_.push_back(nodeIndex);
+  }
+  inline int nodeMapIndex() const
+  {
+    return nodeMapIndex_;
+  }
+  inline void nodeMapIndex(int index)
+  {
+    nodeMapIndex_ = index;
+  }
+  inline int branchVariable() const
+  {
+    return branchVariable_;
+  }
+  inline void branchVariable(int index)
+  {
+    branchVariable_ = index;
+  }
+  inline double branchVariableValue() const
+  {
+    return branchVariableValue_;
+  }
+  inline void branchVariableValue(double value)
+  {
+    branchVariableValue_ = value;
+  }
+  inline int branchWay() const
+  {
+    return branchWay_;
+  }
+  inline void branchWay(int direction)
+  {
+    branchWay_ = direction;
+  }
+  inline int lpFeasible() const
+  {
+    return lpFeasible_;
+  }
+  inline void lpFeasible(int status)
+  {
+    lpFeasible_ = status;
+  }
+  void setNodeMapAttributes(int nodeIndex, const CbcBranchingObject* branchingObject=NULL);
+  void setNodeMapAttributes(int nodeIndex, CbcNode* siblingNode);
+  inline void addChild(std::shared_ptr<CbcNode> child)
+  {
+    children_.push_back(child);
+  }
+  inline std::vector<std::shared_ptr<CbcNode> > children() const
+  {
+    return children_;
+  }
+  inline bool processed() const
+  {
+    return processed_;
+  }
+  inline void processed(bool wasProcessed)
+  {
+    processed_ = wasProcessed;
+  }
 
 private:
   // Data
@@ -372,6 +452,26 @@ private:
         2 - active
     */
   int state_;
+  /// below here can be moved into its own object at some point need be
+  /// keeping here for development to make it easier to move to CyLP since CyCbcNode already exists
+  /// 0 not a leaf; 1 is leaf; relative to the nodes stored in CbcModel.nodeMap
+  int nodeMapLeafStatus_;
+  /// Vector of indices of CbcModel.nodeMap representing the ancestors (including self) of this node
+  std::vector<int> nodeMapLineage_;
+  /// Index of this node in CbcModel.nodeMap, -1 means uninitialized
+  int nodeMapIndex_;
+  /// which variable was branched on to create this node (-1 for uninitialized)
+  int branchVariable_;
+  /// what was the value of the branching variable prior to branching
+  double branchVariableValue_;
+  /// which direction this node branches first (-1 for down/left, 1 for up/right, 0 uninitialized)
+  int branchWay_;
+  /// feasibility of node's LP relaxation (0: unknown, 1: feasible, 2: infeasible)
+  int lpFeasible_;
+  /// whether or not this node has been processed by branch and bound
+  bool processed_;
+  /// children of this node
+  std::vector<std::shared_ptr<CbcNode> > children_;
 };
 
 #endif

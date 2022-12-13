@@ -7,6 +7,7 @@
 #define CbcModel_H
 #include <string>
 #include <vector>
+#include <memory>
 #include "CoinMessageHandler.hpp"
 #include "OsiSolverInterface.hpp"
 #include "OsiBranchingObject.hpp"
@@ -17,6 +18,7 @@
 #include "CbcMessage.hpp"
 #include "CbcEventHandler.hpp"
 #include "ClpDualRowPivot.hpp"
+#include "ClpSimplex.hpp"
 
 class CbcCutGenerator;
 class CbcBaseModel;
@@ -2615,20 +2617,8 @@ public:
   {
     return symmetryInfo_;
   }
-  /// Set symmetry information
-  inline void setSymmetryInfo(CbcSymmetry * info)
-  {
-    symmetryInfo_ = info;
-  }
   /// get rid of all
   void zapSymmetry();
-  /// Root symmetry information
-  inline CbcSymmetry *rootSymmetryInfo() const
-  {
-    return rootSymmetryInfo_;
-  }
-  /// get rid of all
-  void zapRootSymmetry();
 #endif
   /// Set depth for fast nodes
   inline void setFastNodeDepth(int value)
@@ -2741,6 +2731,39 @@ public:
   {
     return this->mipStart_;
   }
+
+  /// Get the value of persistNodes
+  inline bool persistNodes() const
+  {
+    return persistNodes_;
+  }
+  /// Set the value of persistNodes
+  inline void persistNodes(bool value)
+  {
+    persistNodes_ = value;
+  }
+  /// Get the copy of nodes if they are persisted
+  inline std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > nodeMap() const
+  {
+    return *nodeMap_;
+  }
+  /// Get the dual bound at each root cut generation iteration
+  inline std::vector<double> rootCutsDualBound() const
+  {
+    return *rootCutsDualBound_;
+  }
+  /// Create and add a persistent copy of the root node to nodeMap
+  void setPersistentRootNode();
+
+  /// Creates a deep copy of lp with constraints standardized to Ax >= b
+  std::shared_ptr<ClpSimplex> standardizeLp(ClpSimplex* lp, int branchVariable=-1, int branchWay=0,
+                                            double branchVariableValue=-COIN_DBL_MAX);
+
+  /// Update the attributes of the current node and initialize attributes of its child if necessary
+  void updateNodeMap(CbcNode *& node, CbcNode *& newNode);
+
+  /// Add all unprocessed nodes to nodeMap
+  void completeNodeMap();
 
   //---------------------------------------------------------------------------
 
@@ -3115,12 +3138,8 @@ private:
 #else
   CbcEventHandler *eventHandler_;
 #endif
-#ifdef COIN_HAS_NTY
   /// Symmetry information
   CbcSymmetry *symmetryInfo_;
-  /// Root symmetry information
-  CbcSymmetry *rootSymmetryInfo_;
-#endif
   /// Total number of objects
   int numberObjects_;
 
@@ -3270,6 +3289,14 @@ private:
   CbcBaseModel *master_;
   /// Pointer to masterthread
   CbcThread *masterThread_;
+  /// whether or not to save a copy of each node in nodeMap - disables deleting nodes after fathoming
+  bool persistNodes_;
+  /// copy of nodes (for deriving cutting planes in instances with same coef matrix)
+  /// outer shared pointer is so it won't get deleted until garbage collection
+  std::shared_ptr<std::vector<std::pair<std::shared_ptr<CbcNode>, std::shared_ptr<ClpSimplex> > > > nodeMap_;
+  /// Root dual bound value after each round of cut generation
+  /// outer shared pointer is so it won't get deleted until garbage collection
+  std::shared_ptr<std::vector<double> > rootCutsDualBound_;
   //@}
 };
 /// So we can use osiObject or CbcObject during transition
@@ -3295,6 +3322,8 @@ int callCbc1(const char *input2, CbcModel &babSolver, int(CbcModel *currentSolve
 int CbcMain1(int argc, const char *argv[], CbcModel &babSolver, int(CbcModel *currentSolver, int whereFrom));
 // For uniform setting of cut and heuristic options
 void setCutAndHeuristicOptions(CbcModel &model);
+
+
 #endif
 
 /* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2

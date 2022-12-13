@@ -3799,6 +3799,8 @@ int CbcMain1(int argc, const char *argv[],
                 model_.setSecondaryStatus(iStatus2);
                 si->setWarmStart(NULL);
                 int returnCode = 0;
+                std::cout << "preSolve is " << preSolve << "\n";
+                std::cout << "preProcess is " << preProcess << "\n";
                 if (callBack != NULL)
                   callBack(&model_, 1);
                 if (returnCode) {
@@ -8015,6 +8017,9 @@ int CbcMain1(int argc, const char *argv[],
                 int returnCode = 0;
                 if (callBack != NULL)
                   returnCode = callBack(babModel_, 5);
+                if (model.persistNodes()){
+                  std::cout << "nodeMap has " << model.nodeMap().size() << " elements \n";
+                }
                 if (returnCode) {
                   // exit if user wants
                   model_.moveInfo(*babModel_);
